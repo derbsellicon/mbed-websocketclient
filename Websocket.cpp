@@ -83,8 +83,6 @@ bool Websocket::connect() {
       printf("Could not send request");
       return false;
     }
-    
-    while(socket.receive(cmd, 1) != 1);
 
     ret = read(cmd, 200);
     if(ret < 0)
@@ -185,9 +183,13 @@ bool Websocket::read(char * message) {
             return false;
         }
         
+        socket.set_blocking(false, 1);
         if (socket.receive(&opcode, 1) != 1) {
+            socket.set_blocking(false, 2000);
             return false;
         }
+        
+        socket.set_blocking(false, 2000);
 
         if (opcode == 0x81)
             break;
