@@ -52,7 +52,7 @@ void Websocket::fillFields(char * url) {
 
 
 bool Websocket::connect() {
-    char cmd[192];
+    char cmd[200];
     
     while (socket.connect(ip_domain.c_str(), atoi(port.c_str())) < 0) {
         printf("Unable to connect to (%s) on port (%d)\r\n", ip_domain.c_str(), atoi(port.c_str()));
@@ -86,7 +86,7 @@ bool Websocket::connect() {
     
     while(socket.receive(cmd, 1) != 1);
 
-    ret = read(cmd, 512);
+    ret = read(cmd, 200);
     if(ret < 0)
     {
       close();
@@ -103,7 +103,7 @@ bool Websocket::connect() {
     {
       printf("Wrong answer from server, got \"%s\" instead\r\n", cmd);
       do{
-        ret = read(cmd, 512);
+        ret = read(cmd, 200);
         if(ret < 0)
         {
           printf("Could not receive answer\r\n");
@@ -291,7 +291,6 @@ int Websocket::read(char * str, int len, bool block) {
                 if ((res = socket.receive(str + idx, len - idx)) != -1)
                     break;
             }
-            
             if (i == MAX_TRY_READ - 1 || !block)
                 return (idx == 0) ? -1 : idx;
         }
