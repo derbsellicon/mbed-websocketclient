@@ -137,8 +137,8 @@ class Websocket
         
         TCPSocketConnection socket;
 
-        int read(char * buf, int len, bool block = true);
-        int write(char * buf, int len, uint32_t timeout=5000);
+        int read(char * buf, int len, int min_len = -1);
+        int write(char * buf, int len);
 };
 
 #endif
