@@ -125,10 +125,9 @@ class Websocket
     private:
 
         void fillFields(char * url);
-        int sendOpcode(uint8_t opcode);
-        int sendLength(uint32_t len);
-        int sendMask();
-        int sendChar(char c);
+        int sendOpcode(uint8_t opcode, char * msg);
+        int sendLength(uint32_t len, char * msg);
+        int sendMask(char * msg);
         int readChar(char * pC, bool block = true);
 
         std::string ip_domain;

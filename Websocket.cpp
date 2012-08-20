@@ -121,49 +121,49 @@ bool Websocket::connect() {
     return true;
 }
 
-int Websocket::sendLength(uint32_t len) {
+int Websocket::sendLength(uint32_t len, char * msg) {
 
     if (len < 126) {
-        sendChar(len | (1<<7));
+        msg[0] = len | (1<<7);
         return 1;
     } else if (len < 65535) {
-        sendChar(126 | (1<<7));
-        sendChar((len >> 8) & 0xff);
-        sendChar(len & 0xff);
+        msg[0] = 126 | (1<<7);
+        msg[1] = (len >> 8) & 0xff;
+        msg[2] = len & 0xff;
         return 3;
     } else {
-        sendChar(127 | (1<<7));
+        msg[0] = 127 | (1<<7);
         for (int i = 0; i < 8; i++) {
-            sendChar((len >> i*8) & 0xff);
+            msg[i+1] = (len >> i*8) & 0xff;
         }
         return 9;
     }
-}
-
-int Websocket::sendChar(char c) {
-    return write(&c, 1);
 }
 
 int Websocket::readChar(char * pC, bool block) {
     return read(pC, 1, 1);
 }
 
-int Websocket::sendOpcode(uint8_t opcode) {
-    return sendChar(0x80 | (opcode & 0x0f));
+int Websocket::sendOpcode(uint8_t opcode, char * msg) {
+    msg[0] = 0x80 | (opcode & 0x0f);
+    return 1;
 }
 
-int Websocket::sendMask() {
+int Websocket::sendMask(char * msg) {
     for (int i = 0; i < 4; i++) {
-        sendChar(0);
+        msg[i] = 0;
     }
     return 4;
 }
 
 int Websocket::send(char * str) {
-    sendOpcode(0x01);
-    sendLength(strlen(str));
-    sendMask();
-    int res = write(str, strlen(str));
+    char msg[strlen(str) + 15];
+    int idx = 0;
+    idx = sendOpcode(0x01, msg);
+    idx += sendLength(strlen(str), msg + idx);
+    idx += sendMask(msg + idx);
+    memcpy(msg+idx, str, strlen(str));
+    int res = write(msg, idx + strlen(str));
     return res;
 }
 
