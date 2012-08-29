@@ -184,6 +184,12 @@ bool Websocket::read(char * message) {
             DBG("timeout ws\r\n");
             return false;
         }
+        
+        if(!socket.is_connected())
+        {
+            WARN("Connection was closed by server");
+            return false;
+        }
 
         socket.set_blocking(false, 1);
         if (socket.receive(&opcode, 1) != 1) {
@@ -262,6 +268,12 @@ int Websocket::write(char * str, int len) {
     int res = 0, idx = 0;
     
     for (int j = 0; j < MAX_TRY_WRITE; j++) {
+    
+        if(!socket.is_connected())
+        {
+            WARN("Connection was closed by server");
+            break;
+        }
 
         if ((res = socket.send_all(str + idx, len - idx)) == -1)
             continue;
