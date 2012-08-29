@@ -32,7 +32,6 @@
 #define WEBSOCKET_H
 
 #include "mbed.h"
-#include <string>
 
 #include "TCPSocketConnection.h"
 
@@ -120,19 +119,21 @@ class Websocket
         *
         * @return path
         */
-        std::string getPath();
+        char* getPath();
 
     private:
 
         void fillFields(char * url);
+        int parseURL(const char* url, char* scheme, size_t maxSchemeLen, char* host, size_t maxHostLen, uint16_t* port, char* path, size_t maxPathLen); //Parse URL
         int sendOpcode(uint8_t opcode, char * msg);
         int sendLength(uint32_t len, char * msg);
         int sendMask(char * msg);
         int readChar(char * pC, bool block = true);
-
-        std::string ip_domain;
-        std::string path;
-        std::string port;
+        
+        char scheme[8];
+        uint16_t port;
+        char host[32];
+        char path[64];
         
         TCPSocketConnection socket;
 

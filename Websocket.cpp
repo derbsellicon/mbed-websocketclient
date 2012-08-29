@@ -1,5 +1,4 @@
 #include "Websocket.h"
-#include <string>
 
 #define MAX_TRY_WRITE 50
 #define MAX_TRY_READ 30
@@ -23,56 +22,112 @@ Websocket::Websocket(char * url) {
 }
 
 void Websocket::fillFields(char * url) {
-    char *res = NULL;
-    char *res1 = NULL;
+  int ret = parseURL(url, scheme, sizeof(scheme), host, sizeof(host), &port, path, sizeof(path));
+  if(ret)
+  {
+    ERR("URL parsing failed; please use: \"ws://ip-or-domain[:port]/path\"");
+    return;
+  }
 
-    char buf[50];
-    strcpy(buf, url);
+  if(port == 0) //TODO do handle WSS->443
+  {
+    port = 80;
+  }
+  
+  if(strcmp(scheme, "ws"))
+  {
+    ERR("Wrong scheme, please use \"ws\" instead");
+  }
+}
 
-    res = strtok(buf, ":");
-    if (strcmp(res, "ws")) {
-        DBG("\r\nFormat printfor: please use: \"ws://ip-or-domain[:port]/path\"\r\n\r\n");
-    } else {
-        //ip_domain and port
-        res = strtok(NULL, "/");
+int Websocket::parseURL(const char* url, char* scheme, size_t maxSchemeLen, char* host, size_t maxHostLen, uint16_t* port, char* path, size_t maxPathLen) //Parse URL
+{
+  char* schemePtr = (char*) url;
+  char* hostPtr = (char*) strstr(url, "://");
+  if(hostPtr == NULL)
+  {
+    WARN("Could not find host");
+    return -1; //URL is invalid
+  }
 
-        //path
-        res1 = strtok(NULL, " ");
-        if (res1 != NULL) {
-            path = res1;
-        }
+  if( maxSchemeLen < hostPtr - schemePtr + 1 ) //including NULL-terminating char
+  {
+    WARN("Scheme str is too small (%d >= %d)", maxSchemeLen, hostPtr - schemePtr + 1);
+    return -1;
+  }
+  memcpy(scheme, schemePtr, hostPtr - schemePtr);
+  scheme[hostPtr - schemePtr] = '\0';
 
-        //ip_domain
-        res = strtok(res, ":");
+  hostPtr+=3;
 
-        //port
-        res1 = strtok(NULL, " ");
-        if (res1 != NULL) {
-            port = res1;
-        } else {
-            port = "80";
-        }
+  size_t hostLen = 0;
 
-        if (res != NULL) {
-            ip_domain = res;
-        }
+  char* portPtr = strchr(hostPtr, ':');
+  if( portPtr != NULL )
+  {
+    hostLen = portPtr - hostPtr;
+    portPtr++;
+    if( sscanf(portPtr, "%hu", port) != 1)
+    {
+      WARN("Could not find port");
+      return -1;
     }
+  }
+  else
+  {
+    *port=0;
+  }
+  char* pathPtr = strchr(hostPtr, '/');
+  if( hostLen == 0 )
+  {
+    hostLen = pathPtr - hostPtr;
+  }
+
+  if( maxHostLen < hostLen + 1 ) //including NULL-terminating char
+  {
+    WARN("Host str is too small (%d >= %d)", maxHostLen, hostLen + 1);
+    return -1;
+  }
+  memcpy(host, hostPtr, hostLen);
+  host[hostLen] = '\0';
+
+  size_t pathLen;
+  char* fragmentPtr = strchr(hostPtr, '#');
+  if(fragmentPtr != NULL)
+  {
+    pathLen = fragmentPtr - pathPtr;
+  }
+  else
+  {
+    pathLen = strlen(pathPtr);
+  }
+
+  if( maxPathLen < pathLen + 1 ) //including NULL-terminating char
+  {
+    WARN("Path str is too small (%d >= %d)", maxPathLen, pathLen + 1);
+    return -1;
+  }
+  memcpy(path, pathPtr, pathLen);
+  path[pathLen] = '\0';
+
+  return 0;
 }
 
 
 bool Websocket::connect() {
     char cmd[200];
 
-    while (socket.connect(ip_domain.c_str(), atoi(port.c_str())) < 0) {
-        ERR("Unable to connect to (%s) on port (%d)\r\n", ip_domain.c_str(), atoi(port.c_str()));
+    while (socket.connect(host, port) < 0) {
+        ERR("Unable to connect to (%s) on port (%d)", host, port);
         wait(0.2);
+        return false;
     }
 
     // sent http header to upgrade to the ws protocol
-    sprintf(cmd, "GET /%s HTTP/1.1\r\n", path.c_str());
+    sprintf(cmd, "GET %s HTTP/1.1\r\n", path);
     write(cmd, strlen(cmd));
-
-    sprintf(cmd, "Host: %s:%s\r\n", ip_domain.c_str(), port.c_str());
+    
+    sprintf(cmd, "Host: %s:%d\r\n", host, port);
     write(cmd, strlen(cmd));
 
     sprintf(cmd, "Upgrade: WebSocket\r\n");
@@ -117,7 +172,7 @@ bool Websocket::connect() {
         return false;
     }
 
-    INFO("\r\nip_domain: %s\r\npath: /%s\r\nport: %s\r\n\r\n", ip_domain.c_str(), path.c_str(), port.c_str());
+    INFO("\r\nhost: %s\r\npath: %s\r\nport: %d\r\n\r\n", host, path, port);
     return true;
 }
 
@@ -260,7 +315,7 @@ bool Websocket::is_connected() {
     return socket.is_connected();
 }
 
-std::string Websocket::getPath() {
+char* Websocket::getPath() {
     return path;
 }
 
