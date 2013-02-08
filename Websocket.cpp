@@ -1,7 +1,7 @@
 #include "Websocket.h"
 
-#define MAX_TRY_WRITE 50
-#define MAX_TRY_READ 30
+#define MAX_TRY_WRITE 20
+#define MAX_TRY_READ 10
 
 //Debug is disabled by default
 #if 0
