@@ -1,0 +1,15 @@
+{
+  "name": "mbed-websocketclient",
+  "version": "0.0.1",
+  "description": "mbed library for websocket. it is a fork of Samuel Mokrani works: https://developer.mbed.org/users/ansond/code/WebSocketClient",
+  "keywords": [
+    "websocket",
+    "mbed"
+  ],
+  "author": "Zakaria ElQotbi",
+  "homepage": "https://github.com/derbsellicon/mbed-websocketclient",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "mbed-drivers": "*"
+  }
+}
